@@ -3,7 +3,9 @@ package com.example.demo.global.jwt.filter;
 import com.example.demo.global.jwt.service.JwtService;
 import com.example.demo.global.jwt.util.PasswordUtil;
 import com.example.demo.member.entity.Member;
+import com.example.demo.member.entity.MemberRole;
 import com.example.demo.member.repository.MemberRepository;
+import com.example.demo.member.repository.MemberRoleRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -18,6 +20,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.List;
 
 @RequiredArgsConstructor
 public class JwtAuthenticationProcessingFilter extends OncePerRequestFilter {
@@ -26,8 +29,9 @@ public class JwtAuthenticationProcessingFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
     private final MemberRepository memberRepository;
+    private final MemberRoleRepository memberRoleRepository;
 
-    private GrantedAuthoritiesMapper authoritiesMapper = new NullAuthoritiesMapper();
+    private final GrantedAuthoritiesMapper authoritiesMapper = new NullAuthoritiesMapper();
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
@@ -44,9 +48,9 @@ public class JwtAuthenticationProcessingFilter extends OncePerRequestFilter {
         if (refreshToken != null) {
             checkRefreshTokenAndReIssueAccessToken(response, refreshToken);
             return;
-        } else {
-            checkAccessTokenAndAuthentication(request, response, filterChain);
         }
+
+        checkAccessTokenAndAuthentication(request, response, filterChain);
     }
 
     private void checkRefreshTokenAndReIssueAccessToken(HttpServletResponse response, String refreshToken) {
@@ -84,10 +88,16 @@ public class JwtAuthenticationProcessingFilter extends OncePerRequestFilter {
             password = PasswordUtil.generateRandomPassword();
         }
 
+        List<MemberRole> memberRoles = memberRoleRepository.findByMember(member);
+
+        String[] roles = memberRoles.stream()
+                .map(role -> role.getRole().toString())
+                .toArray(String[]::new);
+
         UserDetails userDetails = org.springframework.security.core.userdetails.User.builder()
                 .username(member.getUsername())
                 .password(password)
-                .roles(member.getRole().name())
+                .roles(roles)
                 .build();
 
         Authentication authentication =

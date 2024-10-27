@@ -2,6 +2,9 @@ package com.example.demo.global.jwt.service;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
+import com.auth0.jwt.interfaces.DecodedJWT;
+import com.example.demo.global.response.error.ApplicationError;
+import com.example.demo.global.response.exception.ApplicationException;
 import com.example.demo.member.repository.MemberRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -93,7 +96,7 @@ public class JwtService {
 
     public Optional<String> extractRefreshToken(HttpServletRequest request) {
 
-        return Optional.ofNullable(request.getHeader(accessHeader))
+        return Optional.ofNullable(request.getHeader(refreshHeader))
                 .filter(refreshToken -> refreshToken.startsWith(BEARER))
                 .map(refreshToken -> refreshToken.replace(BEARER, ""));
     }
@@ -116,9 +119,13 @@ public class JwtService {
 
         memberRepository.findByUsername(username)
                 .ifPresentOrElse(
-                        member -> member.updateRefreshToken(refreshToken),
-                        () -> new Exception("일치하는 회원이 없습니다.")
-                );
+                        member -> {
+                            member.updateRefreshToken(refreshToken);
+                            memberRepository.saveAndFlush(member);
+                        },
+                        () -> {
+                            throw new ApplicationException(ApplicationError.MEMBER_NOT_FOUND);
+                        });
     }
 
     public boolean isTokenValid(String token) {

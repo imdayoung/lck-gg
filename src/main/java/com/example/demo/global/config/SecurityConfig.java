@@ -7,6 +7,7 @@ import com.example.demo.login.handler.LoginFailureHandler;
 import com.example.demo.login.handler.LoginSuccessHandler;
 import com.example.demo.login.service.LoginService;
 import com.example.demo.member.repository.MemberRepository;
+import com.example.demo.member.repository.MemberRoleRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -33,6 +34,7 @@ public class SecurityConfig {
     private final LoginService loginService;
     private final JwtService jwtService;
     private final MemberRepository memberRepository;
+    private final MemberRoleRepository memberRoleRepository;
 
     private static final String[] AUTH_WHITELIST = {
             "/login",
@@ -50,6 +52,7 @@ public class SecurityConfig {
                         .frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin).disable())
                 .authorizeHttpRequests((authorize) -> authorize
                         .requestMatchers(AUTH_WHITELIST).permitAll()
+                        .requestMatchers("/api/v1/player/**").hasRole("PLAYER")
                         .anyRequest().authenticated())
                 .logout((logout) -> logout
                         .logoutSuccessUrl("/login")
@@ -68,7 +71,7 @@ public class SecurityConfig {
     }
 
     @Bean
-    public AuthenticationManager authenticationManager() throws Exception {
+    public AuthenticationManager authenticationManager() {
 
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
         provider.setPasswordEncoder(passwordEncoder());
@@ -87,7 +90,7 @@ public class SecurityConfig {
     }
 
     @Bean
-    public JsonUsernamePasswordAuthenticationFilter jsonUsernamePasswordAuthenticationFilter() throws Exception {
+    public JsonUsernamePasswordAuthenticationFilter jsonUsernamePasswordAuthenticationFilter() {
 
         JsonUsernamePasswordAuthenticationFilter jsonUsernamePasswordAuthenticationFilter = new JsonUsernamePasswordAuthenticationFilter(objectMapper);
         jsonUsernamePasswordAuthenticationFilter.setAuthenticationManager(authenticationManager());
@@ -98,6 +101,6 @@ public class SecurityConfig {
 
     @Bean
     public JwtAuthenticationProcessingFilter jwtAuthenticationProcessingFilter() {
-        return new JwtAuthenticationProcessingFilter(jwtService, memberRepository);
+        return new JwtAuthenticationProcessingFilter(jwtService, memberRepository, memberRoleRepository);
     }
 }

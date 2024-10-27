@@ -11,6 +11,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+
 @Service
 @Transactional
 @RequiredArgsConstructor
@@ -19,7 +21,7 @@ public class MemberService {
     private final MemberRepository memberRepository;
     private final PasswordEncoder passwordEncoder;
 
-    public void signUp(MemberSignUpRequest memberSignUpRequest) throws Exception {
+    public void signUp(MemberSignUpRequest memberSignUpRequest) {
 
         if (memberRepository.findByUsername(memberSignUpRequest.getUsername()).isPresent()) {
             throw new ApplicationException(ApplicationError.USERNAME_DUPLICATED);
@@ -29,9 +31,12 @@ public class MemberService {
                 .username(memberSignUpRequest.getUsername())
                 .password(memberSignUpRequest.getPassword())
                 .nickname(memberSignUpRequest.getNickname())
+                .birthday(memberSignUpRequest.getBirthday())
                 .age(memberSignUpRequest.getAge())
-                .role(Role.USER)
+                .memberRoles(new ArrayList<>())
                 .build();
+
+        member.addRole(Role.USER);
 
         member.passwordEncode(passwordEncoder);
         memberRepository.save(member);

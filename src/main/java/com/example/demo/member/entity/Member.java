@@ -5,6 +5,10 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
 @Getter
 @Builder
@@ -23,10 +27,12 @@ public class Member extends BaseTimeEntity {
 
     private String nickname;
 
+    private LocalDate birthday;
+
     private Integer age;
 
-    @Enumerated(EnumType.STRING)
-    private Role role;
+    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL)
+    private List<MemberRole> memberRoles = new ArrayList<>();
 
     @Enumerated(EnumType.STRING)
     private SocialType socialType;
@@ -34,10 +40,6 @@ public class Member extends BaseTimeEntity {
     private String socialId;
 
     private String refreshToken;
-
-    public void authorizeMember() {
-        this.role = Role.USER;
-    }
 
     public void passwordEncode(PasswordEncoder passwordEncoder) {
         this.password = passwordEncoder.encode(this.password);
@@ -53,5 +55,11 @@ public class Member extends BaseTimeEntity {
 
     public void updateRefreshToken(String refreshToken) {
         this.refreshToken = refreshToken;
+    }
+
+    public void addRole(Role role) {
+
+        MemberRole memberRole = MemberRole.createMemberRole(this, role);
+        this.memberRoles.add(memberRole);
     }
 }
