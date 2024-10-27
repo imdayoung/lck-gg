@@ -36,6 +36,9 @@ dependencies {
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
 
+    // Crawling
+    implementation 'org.seleniumhq.selenium:selenium-java:4.6.0'
+
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
